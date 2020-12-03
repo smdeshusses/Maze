@@ -14,27 +14,37 @@ enum space{
 
 public class Maze {
 	
+	static int count = 0;
+	static int initialMinMoves;
+
 	public static void main(String[] args) throws IOException {
-		//singlePlayer(20);
-		firstSolver(17); 
+		//singlePlayer(17);
+		firstSolver(20);
 	}
 
 	public static void firstSolver(int mazeNum) {
 		long start = System.currentTimeMillis();
 		GenerateMaze m = new GenerateMaze();
 		MazeState mazeState = m.makeMaze(mazeNum);
+		initialMinMoves = Lookahead.look(mazeState);
 		recursiveSolver(mazeState);
 		long end = System.currentTimeMillis();
-		System.out.println("It took: " + (end-start)/1000.0 + " seconds");
+		System.out.println("It took: " + (end-start)/1000.0 + " seconds and " + count + " iterations");
 	}
 
 	public static void recursiveSolver(MazeState mazeState) {
+		int knownFewestMoves = 31;
+		boolean possibleFinish=true;
+		if(knownFewestMoves-initialMinMoves<=mazeState.getMoves()) {
+			if(Lookahead.look(mazeState)+mazeState.getMoves()>knownFewestMoves) {
+				possibleFinish=false;
+			}
+		}
+		count++;
 		if(getUnsolvedCount(mazeState)==0) {
 			System.out.println("SOLVED in " + mazeState.getMoves());
 		}
-		
-		else if(mazeState.getMoves()<21) {
-
+		else if(mazeState.getMoves()<knownFewestMoves && possibleFinish) {
 			ArrayList<MazeState> moves = getPossibleMoves(mazeState);
 			for(int i=0; i<moves.size(); i++) {
 				MazeState deepCopy = new MazeState(moves.get(i));
@@ -143,6 +153,7 @@ public class Maze {
 
 		while (getUnsolvedCount(mazeState)>0) {
 			printMaze(mazeState);
+			ArrayList<MazeState> a = getPossibleMoves(mazeState);
 			byte input = getInput();
 			makeMove(mazeState, input);
 		}
@@ -224,6 +235,10 @@ public class Maze {
 			}
 			mazeState.setYCoord(y);
 		}
+		if(move == 'C') { //for testing only
+			System.out.println("Min cover: " + Lookahead.look(mazeState));
+			//decrement
+		}
 
 		mazeState.incrementMoves();
 	}
@@ -232,7 +247,7 @@ public class Maze {
 		BufferedReader reader =  
 				new BufferedReader(new InputStreamReader(System.in)); 
 		String val = reader.readLine(); 
-		while(!(val.equals("L") || val.equals("R") || val.equals("U") || val.equals("D"))) {
+		while(!(val.equals("L") || val.equals("R") || val.equals("U") || val.equals("D") || val.equals("C"))) {
 			System.out.println("Invalid input, try again");
 			val = reader.readLine(); 
 		}
